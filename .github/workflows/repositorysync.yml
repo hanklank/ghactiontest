@@ -33,7 +33,9 @@ jobs:
   scheduled-sync:
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.IMAGE }}
+      # image: ${{ env.IMAGE }} # https://github.com/orgs/community/discussions/26324
+      image: ghcr.io/janderssonse/gitprovidersync:v0.3.1
+    if: github.event_name == 'schedule'
     steps:
       - name: Print configuration
         run: gitprovidersync print
@@ -44,7 +46,8 @@ jobs:
   manual_sync:
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.IMAGE }}
+      # image: ${{ env.IMAGE }} # https://github.com/orgs/community/discussions/26324
+      image: ghcr.io/janderssonse/gitprovidersync:v0.3.1
     if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Print configuration
@@ -52,3 +55,4 @@ jobs:
 
       - name: Sync configuration
         run: gitprovidersync sync --active-from-limit ${{ env.ACTIVE_FROM_LIMIT }} --overwrite-target
+
