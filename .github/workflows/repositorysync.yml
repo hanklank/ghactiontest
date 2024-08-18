@@ -1,0 +1,54 @@
+# This GitHub Action example shows two GitHub Action jobs.
+# A regular job, to run on schedule.
+# A manual job, to be run manually from the GitHub Action UI.
+
+name: Git Provider Sync
+
+on:
+  schedule:
+    - cron:
+        "0 */2 * * *" # Adjust cron expression as needed for scheduling.
+        # This example would run every other hour.
+  workflow_dispatch: # Allows manual triggering from the GitHub Actions UI
+
+env:
+  IMAGE: path/to/gitprovidersync/image:version
+
+  # Source provider configuration example
+  GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_PROVIDER: gitlab
+  GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_DOMAIN: gitlab.com
+  GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_USER: auser
+  GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_INCLUDE_REPOSITORIES: areponame,anotherreponame
+
+  # Target provider configuration example
+  GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_PROVIDER: gitlab
+  GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_DOMAIN: gitlab.com
+  GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_USER: ausername
+  ACTIVE_FROM_LIMIT: "-30000h"
+
+  # You would define the secret token in GitHub Secrets (e.g., GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_TOKEN)
+  # GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_TOKEN: ${{ secrets.YOUR_SECRET_NAME }}
+
+jobs:
+  scheduled-sync:
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.IMAGE }}
+    steps:
+      - name: Print configuration
+        run: gitprovidersync print
+
+      - name: Sync configuration
+        run: gitprovidersync sync --active-from-limit ${{ env.ACTIVE_FROM_LIMIT }} --overwrite-target
+
+  manual_sync:
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.IMAGE }}
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Print configuration
+        run: gitprovidersync print
+
+      - name: Sync configuration
+        run: gitprovidersync sync --active-from-limit ${{ env.ACTIVE_FROM_LIMIT }} --overwrite-target
