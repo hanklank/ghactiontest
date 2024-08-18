@@ -1,5 +1,5 @@
 # This GitHub Action example shows two GitHub Action jobs.
-# A regular job, to run on schedule.
+# A regular job, to run on a schedule.
 # A manual job, to be run manually from the GitHub Action UI.
 
 name: Git Provider Sync
@@ -10,23 +10,53 @@ on:
         "0 */2 * * *" # Adjust cron expression as needed for scheduling.
         # This example would run every other hour.
   workflow_dispatch: # Allows manual triggering from the GitHub Actions UI
+      inputs:
+        IMAGE:
+          description: "Path to container image"
+          required: true
+          default: "path/to/gitprovidersync/image:version"
 
-env:
-  IMAGE: path/to/gitprovidersync/image:version
+        GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_PROVIDER:
+          description: "Source provider for the configuration (e.g., gitlab, github, gitea see docs)"
+          required: true
+          default: "gitlab"
 
-  # Source provider configuration example
-  GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_PROVIDER: gitlab
-  GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_DOMAIN: gitlab.com
-  GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_USER: auser
-  GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_INCLUDE_REPOSITORIES: areponame,anotherreponame
+        GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_DOMAIN:
+          description: "Domain of the source provider (gitlab.com, github.com, etc.)"
+          required: true
+          default: "gitlab.com"
 
-  # Target provider configuration example
-  GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_PROVIDER: gitlab
-  GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_DOMAIN: gitlab.com
-  GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_USER: ausername
-  ACTIVE_FROM_LIMIT: "-30000h"
+        GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_USER:
+          description: "Username for the source provider"
+          required: true
+          default: "auser"
 
-  # You would define the secret token in GitHub Secrets (e.g., GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_TOKEN)
+        GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_INCLUDE_REPOSITORIES:
+          description: "Comma-separated list of repositories to include (if empty, all are fetched)"
+          required: false
+          default: "areponame,anotherreponame"
+
+        GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_PROVIDER:
+          description: "Target provider for the configuration (e.g., gitlab, github, directory, tar, etc.)"
+          required: true
+          default: "gitlab"
+
+        GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_DOMAIN:
+          description: "Domain of the target provider (e.g., gitlab.com, yourgitlab.domainname)"
+          required: true
+          default: "gitlab.com"
+
+        GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_USER:
+          description: "Target group or namespace in the target provider"
+          required: true
+          default: "ausername"
+
+        ACTIVE_FROM_LIMIT:
+          description: "How old changes to be considered, Golang string time duration format."
+          required: true
+          default: "-30000h"
+
+  # You would secret token in GitHub Secrets (e.g., GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_TOKEN)
   # GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_TOKEN: ${{ secrets.YOUR_SECRET_NAME }}
 
 jobs:
@@ -35,6 +65,22 @@ jobs:
     container:
       # image: ${{ env.IMAGE }} # https://github.com/orgs/community/discussions/26324
       image: ghcr.io/janderssonse/gitprovidersync:v0.3.1
+    
+    env:
+      # IMAGE: path/to/gitprovidersync/image:version
+
+      # Source provider configuration example
+      GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_PROVIDER: gitlab
+      GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_DOMAIN: gitlab.com
+      GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_USER: auser
+      GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_INCLUDE_REPOSITORIES: areponame,anotherreponame
+
+      # Target provider configuration example
+      GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_PROVIDER: gitlab
+      GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_DOMAIN: gitlab.com
+      GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_USER: ausername
+      ACTIVE_FROM_LIMIT: "-30000h"
+
     if: github.event_name == 'schedule'
     steps:
       - name: Print configuration
@@ -46,8 +92,18 @@ jobs:
   manual_sync:
     runs-on: ubuntu-latest
     container:
-      # image: ${{ env.IMAGE }} # https://github.com/orgs/community/discussions/26324
+      # image: ${{ inputs.IMAGE }} # https://github.com/orgs/community/discussions/26324
       image: ghcr.io/janderssonse/gitprovidersync:v0.3.1
+    env:
+      GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_PROVIDER: ${{ inputs.GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_PROVIDER }}
+      GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_DOMAIN: ${{ inputs.GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_DOMAIN }}
+      GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_USER: ${{ inputs.GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_USER }}
+      GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_INCLUDE_REPOSITORIES: ${{ inputs.GPS_CONFIGURATIONS_EXAMPLECONF1_SOURCE_INCLUDE_REPOSITORIES }}
+      GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_PROVIDER: ${{ inputs.GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_PROVIDER }}
+      GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_DOMAIN: ${{ inputs.GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_DOMAIN }}
+      GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_USER: ${{ inputs.GPS_CONFIGURATIONS_EXAMPLECONF1_TARGETS_EXAMPLETARGET1_USER }}
+      ACTIVE_FROM_LIMIT: ${{ inputs.ACTIVE_FROM_LIMIT }}
+    
     if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Print configuration
@@ -55,4 +111,3 @@ jobs:
 
       - name: Sync configuration
         run: gitprovidersync sync --active-from-limit ${{ env.ACTIVE_FROM_LIMIT }} --overwrite-target
-
