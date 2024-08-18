@@ -62,6 +62,7 @@ on:
 jobs:
   scheduled-sync:
     runs-on: ubuntu-latest
+    environment: test
     container:
       # image: ${{ env.IMAGE }} # https://github.com/orgs/community/discussions/26324
       image: ghcr.io/janderssonse/gitprovidersync:v0.3.1
@@ -93,6 +94,7 @@ jobs:
 
   manual_sync:
     runs-on: ubuntu-latest
+    environment: test
     container:
       # image: ${{ inputs.IMAGE }} # https://github.com/orgs/community/discussions/26324
       image: ghcr.io/janderssonse/gitprovidersync:v0.3.1
